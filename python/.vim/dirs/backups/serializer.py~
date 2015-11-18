@@ -1,0 +1,57 @@
+from rest_framework import serializers
+from rest_framework.fields import CharField, IntegerField, DateField
+from employee.models import Staff, Contract
+
+
+__author__ = 'alan'
+
+
+class StaffSerializer(serializers.ModelSerializer):
+    #file_number = CharField(max_length=90)
+    #date_of_end_ready = DateField(required=False)
+    format_updated_at = serializers.SerializerMethodField('updated_at')
+    shortcut_identity = serializers.SerializerMethodField('shortcut')
+    format_gender = serializers.SerializerMethodField('gender')
+    format_date_of_birth = serializers.SerializerMethodField('date_of_birth')
+    full_address = serializers.SerializerMethodField('format_full_address')
+    census_full_address = serializers.SerializerMethodField('format_census_full_address')
+    format_status = serializers.SerializerMethodField('status')
+
+    class Meta:
+        model = Staff
+        fields = ('id', 'name', 'type', 'job_title', 'gender',
+                  'sid', 'census_city', 'census_zipcode', 'census_address',
+                  'date_of_birth', 'city', 'zipcode', 'address',
+                  'tel', 'cell_phone', 'remark', 'status',
+                  'full_title', 'format_updated_at', 'format_gender',
+                  'shortcut_identity', 'full_address', 'census_full_address',
+                  'format_status', 'format_date_of_birth')
+        read_only_fields = ('id', 'created_at', 'updated_at')
+
+    def format_full_address(self, obj):
+        return obj.format().full_address()
+
+    def format_census_full_address(self, obj):
+        return obj.format().census_full_address()
+
+    def date_of_birth(self, obj):
+        return obj.format().date_of_birth()
+
+    def status(self, obj):
+        return obj.format().status()
+
+    def updated_at(self, obj):
+        return obj.format().updated_at()
+
+    def shortcut(self, obj):
+        return obj.format().shortcut_identity()
+
+    def gender(self, obj):
+        return obj.format().gender()
+
+
+class ContractSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Contract
+        fields = ('id', 'staff', 'forwarder', 'guarantee')

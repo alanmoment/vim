@@ -1,0 +1,132 @@
+from django.conf.urls import include, url
+from django.contrib import admin
+from rest_framework import routers
+from rest_framework.urlpatterns import format_suffix_patterns
+from criteria.views import CountiesView, PlaceView
+# from customer.views import CustomerModelViewSet, ContactModelViewSet, CustomerDetail, CustomerModelApi, \
+#     CustomerSearchApi, CustomerView
+from fee.views import GroupModelViewSet, ExtraView, GroupView
+# from location.views import PickModelApi, PickModelViewSet
+from system.views import ShortcutModelViewSet, JobTitleModelViewSet, ShortcutSearchApi, ShortcutQueryApi
+
+from location.views import *
+from customer.views import *
+
+from car.views import *
+from employee.views import *
+
+router = routers.SimpleRouter()
+router.register(r'api/customers', CustomerModelApi)
+router.register(r'api/search/customers', CustomerSearchApi)
+router.register(r'api/contacts', ContactModelViewSet)
+
+router.register(r'api/shortcuts', ShortcutModelViewSet)
+router.register(r'api/search/shortcuts', ShortcutSearchApi)
+router.register(r'api/query/shortcuts', ShortcutQueryApi)
+
+router.register(r'api/fee/groups', GroupModelViewSet)
+router.register(r'api/job-titles', JobTitleModelViewSet)
+
+router.register(r'api/picks', PickModelApi)
+router.register(r'api/query/picks', PickQueryApi)
+router.register(r'api/pick-customer', CustomerPickModelApi)
+
+router.register(r'api/parkings', ParkingModelApi)
+router.register(r'api/cars', CarModelApi)
+router.register(r'api/car-tools', ToolModelApi)
+router.register(r'api/hangs', HangModelApi)
+
+router.register(r'api/staffs', StaffModelApi)
+router.register(r'api/contracts', ContractModelApi)
+router.register(r'api/query/contracts', ContractQueryApi)
+
+# Custion 404 views and page
+handler400 = 'system.views.error400'
+handler404 = 'system.views.error404'
+# Custion 500 views and page
+handler500 = 'system.views.error500'
+
+urlpatterns = [
+
+    url(r'^400', 'system.views.error400'),
+
+    url(r'^staffs/?', StaffView.as_view()),
+    url(r'^staff/new/?', StaffModelViewSet.as_view({'get': 'new'})),
+    url(r'^staff/contract/?', ContractModelViewSet.as_view({'get': 'new'})),
+
+    url(r'^cars/?', CarView.as_view()),
+    url(r'^car/new/?', CarModelViewSet.as_view({'get': 'new'})),
+
+    url(r'^pick/new/?', PickModelViewSet.as_view({'get': 'new'})),
+    url(r'^pick/show/(?P<pk>[0-9]+)/?', PickDetailView.as_view()),
+    url(r'^pick/customer/?(?P<pk>[0-9]+)?/?', CustomerRelationView.as_view()),
+    url(r'^picks/?', PickView.as_view()),
+
+
+    # url(r'^customer/new/([0-9]+)?/?', CustomerView.as_view()),
+    url(r'^customer/new/?(?P<pk>[0-9]+)?/?', CustomerModelViewSet.as_view({'get': 'new'})),
+    # url(r'^customer/new', 'customer.views.new'),
+    url(r'^customer/show/([0-9]+)/?', CustomerDetailView.as_view()),
+    # url(r'^customer/ajax/([0-9]+)/(.+)?$', CustomerDetailAjax.as_view({'get': 'list'})),
+    # url(r'^customer/ajax/$', CustomerDetailAjax.as_view({'get': 'list'})),
+    url(r'^customers/?', CustomerView.as_view()),
+    # url(r'^customer/?', customer.views.home),
+
+    # url(r'^api/shortcut/$', ShortcutModelViewSet.as_view()),
+    # url(r'^shortcuts/$', 'system.views.shortcut_list'),
+    # url(r'^shortcuts/(?P<pk>[0-9]+)$', 'system.views.shortcut_list'),
+
+
+    # url(r'^api/shortcut/([0-9]?)/?', ShortcutView.as_view()),
+    url(r'^api/fee/group/([0-9]?)/?', GroupView.as_view()),
+    url(r'^api/fee/extra/$', ExtraView.as_view()),
+    url(r'^api/fee/extra/([0-9]?)/?', ExtraView.as_view()),
+    url(r'^api/place/$', PlaceView.as_view()),
+
+
+    url(r'^$', 'dashboard.views.home'),
+    url(r'^admin/', include(admin.site.urls)),
+
+
+
+    url(r'^api/counties/$', CountiesView.as_view()),
+    # url(r'^api/job-titles/$', JobTitleList.as_view({'get': 'list'})),
+
+    url(r'^', include(router.urls)),
+    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+
+]
+
+urlpatterns = format_suffix_patterns(urlpatterns)
+
+# urlpatterns = format_suffix_patterns([
+#     url('^customers$', CustomerViewSet.as_view({
+#         'get': 'create',
+#         'post': 'list'
+#     }), name='customers-list')
+# ])
+
+'''
+urlpatterns = patterns(
+    '',
+    # Examples:
+    # url(r'^$', 'sy_freight.views.home', name='home'),
+    # url(r'^blog/', include('blog.urls')),
+
+
+    url(r'^admin/', include(admin.site.urls)),
+
+    url(r'^$', 'dashboard.views.home'),
+    url(r'^dispatch$', 'dispatch.views.home'),
+
+    # url(r'^customer/new$', CustomerViewSet.as_view(), name='my-view'),
+
+    url(r'^customer/new', 'customer.views.new'),
+    url(r'^customer/create', 'customer.views.create'),
+    url(r'^customer/edit', 'customer.views.edit'),
+    # url(r'^customer/info_temp$', 'customer.views.infoTemplate'),
+    url(r'^customer', 'customer.views.home'),
+
+    url(r'^util/cityarea', 'criteria.views.cityarea'),
+)
+'''

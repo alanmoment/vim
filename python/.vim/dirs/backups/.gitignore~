@@ -1,0 +1,13 @@
+sy-freight.iml
+.idea
+__pycache__
+*.pyc
+db.sqlite3
+db.test.sqlite3
+.c9
+sy_freight.ini
+uwsgi_params
+/bower_components
+/node_modules
+*.log
+Session.vim

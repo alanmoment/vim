@@ -1,0 +1,178 @@
+import re
+from urllib.parse import unquote
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.response import Response
+from rest_framework import viewsets
+from rest_framework import status
+from system.models import Shortcut, JobTitle
+from system.serializers import ShortcutSerializer, JobTitleSerializer
+
+
+# Semantic-UI Search Components used
+class ShortcutSearchApi(viewsets.ModelViewSet):
+
+    queryset = Shortcut.objects.all()
+    serializer_class = ShortcutSerializer
+
+    def list(self, request, format=None):
+        status_code = status.HTTP_200_OK
+        response = {
+            "success": False,
+            'count': 0,
+            "results": []
+        }
+        # {'invoice_num': '97220830', 'name': '華碩', 'address': '(222) 新北市深坑區民享路152號', 'short_name': '華碩'}
+        if 'type' in request.GET:
+            if 'keyword' in request.GET and request.GET.get('keyword') != '':
+                status_code = status.HTTP_200_OK
+                queryset = Shortcut.objects.filter(identity__icontains=request.GET['keyword'])
+                for shortcut in queryset:
+                    if request.GET.get('type') == 'customer':
+                        if shortcut.reference_obj()['invoice_num'] is not None:
+                            title = "%s %s (%s)" % (shortcut.identity, shortcut.reference_obj()['name'], shortcut.reference_obj()['invoice_num'])
+                        else:
+                            title = "%s %s" % (shortcut.identity, shortcut.reference_obj()['name'])
+                    elif request.GET.get('type') == 'staff':
+                        title = "%s %s" % (shortcut.identity, shortcut.reference_obj()['name'])
+
+                    response.get('results').append({
+                        'title': title,
+                        'description': shortcut.reference_obj()['address']
+                    })
+
+                response.update({
+                    "success": True,
+                    "count": queryset.count()
+                })
+
+        return Response(response, status_code)
+
+
+# API for Query search
+class ShortcutQueryApi(viewsets.ModelViewSet):
+
+    queryset = Shortcut.objects.all()
+    serializer_class = ShortcutSerializer
+
+    def list(self, request, format=None):
+        response = {
+            'count': 0,
+            'results': []
+        }
+        try:
+            queryset = None
+            if 'id' in request.GET:
+                queryset = Shortcut.objects.filter(id=request.GET['id'])
+
+            elif 'keyword' in request.GET and 'type' in request.GET:
+                keyword = unquote(request.GET.get('keyword'))
+                if keyword is not '':
+                    re_str = re.match(r'^([a-zA-Z0-9]{1,8}) (.+)', keyword)
+                    if re_str is not None:
+                        queryset = Shortcut.objects.filter(identity=re_str.group(1))
+                    else:
+                        queryset = Shortcut.objects.filter(
+                            identity__icontains=keyword,
+                            type=request.GET.get('type')
+                        )
+                        # queryset = Shortcut.objects.extra(where=["reference LIKE '%" + keyword + "%'"])
+
+                        # for shortcut in queryset:
+                        #     shortcut.reference = shortcut.reference_format()
+
+            elif 'identity' in request.GET:
+                queryset = Shortcut.objects.filter(identity=request.GET['identity'])
+                # queryset = Shortcut.objects.filter(identity__exact=request.GET['identity'])
+
+            elif 'type' in request.GET:
+                queryset = Shortcut.objects.get(type=request.GET['type'])
+
+            if queryset is not None and queryset.count() > 0:
+                serializer = ShortcutSerializer(queryset, many=True)
+                response.update({
+                    'count': queryset.count(),
+                    'results': serializer.data
+                })
+        except ObjectDoesNotExist:
+            pass
+
+        return Response(response)
+
+
+class ShortcutModelViewSet(viewsets.ModelViewSet):
+
+    queryset = Shortcut.objects.all()
+    serializer_class = ShortcutSerializer
+
+    # def get(self, request, format=None):
+    #     print(111)
+    #     try:
+    #         if 'id' in request.GET:
+    #             queryset = Shortcut.objects.filter(id=request.GET['id'])
+    #         elif 'identity' in request.GET:
+    #             queryset = Shortcut.objects.filter(identity__contains=request.GET['identity'])
+    #         elif 'type' in request.GET:
+    #             queryset = Shortcut.objects.filter(type=request.GET['type'])
+    #         else:
+    #             queryset = Shortcut.objects.all()
+    #
+    #         serializer = ShortcutSerializer(queryset, many=True)
+    #         return Response(serializer.data)
+    #     except Shortcut.DoesNotExist:
+    #         return Response(status=status.HTTP_204_NO_CONTENT)
+    #
+    # def get_queryset(self, request, format=None):
+    #     if 'id' in request.GET:
+    #         queryset = Shortcut.objects.filter(id=request.GET['id'])
+    #     elif 'identity' in request.GET:
+    #         queryset = Shortcut.objects.filter(identity__contains=request.GET['identity'])
+    #     elif 'type' in request.GET:
+    #         queryset = Shortcut.objects.filter(type=request.GET['type'])
+    #     else:
+    #         queryset = Shortcut.objects.all()
+    #
+    #     serializer = ShortcutSerializer(queryset, many=True)
+    #     return Response(serializer.data)
+
+
+class JobTitleModelViewSet(viewsets.ModelViewSet):
+
+    queryset = JobTitle.objects.all()
+    serializer_class = JobTitleSerializer
+
+    def list(self, request, format=None):
+        queryset = JobTitle.objects.all()
+        serializer = JobTitleSerializer(queryset, many=True)
+        return Response({
+            'count': queryset.count(),
+            'results': serializer.data
+        })
+
+    def get_queryset(self):
+        name = self.request.query_params.get('name', None)
+        if name is not None:
+            return JobTitle.objects.filter(name=name)
+        else:
+            return JobTitle.objects.all()
+
+
+from django.shortcuts import render
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+
+
+def error400(request):
+    #return render(request, "400.html")
+    response = render_to_response('400.html', {}, context_instance=RequestContext(request))
+    response.status_code = 400
+    return response
+def error404(request):
+    #return render(request, "400.html")
+    response = render_to_response('404.html', {}, context_instance=RequestContext(request))
+    response.status_code = 404
+    return response
+def error500(request):
+    #return render(request, "400.html")
+    response = render_to_response('500.html', {}, context_instance=RequestContext(request))
+    response.status_code = 500
+    return response

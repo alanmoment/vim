@@ -112,14 +112,24 @@ set encoding=utf-8
 set fileencodings=utf-8,chinese,latin-1
 set fileencoding=utf-8
 
-"Bundle 'alfredodeza/pytest.vim'
-"map <leader>dt :set makeprg=python\ manage.py\ test\|:call MakeGreen()<CR>
-"Bundle 'JarrodCTaylor/vim-python-test-runner'
-"nnoremap <Leader>nf :NosetestFile<CR>
-"nnoremap <Leader>nc :NosetestClass<CR>
-"nnoremap <Leader>nm :NosetestMethod<CR>
-"nnoremap <Leader>nb :NosetestBaseMethod<CR>
-"nnoremap <Leader>rr :RerunLastTests<CR>
+Plugin 'fatih/vim-go'
+
+if has("gui_running")   " GUI color and font settings
+    if has("gui_gtk2")
+        set guifont=Bitstream\ Vera\ Sans\ Mono\ 13
+    else
+        set guifont=Bitstream_Vera_Sans_Mono:h13
+    endif
+    set t_Co=256          " 256 color mode
+    set cursorline        " highlight current line
+    colors railscasts
+    set background=dark
+else
+    " terminal color settings
+    colors wombat256
+    set background=light
+endif
+
 
 nmap <C-b>n  :bnext<CR>
 nmap <C-b>p  :bprev<CR>
@@ -266,19 +276,6 @@ nmap ,r :RecurGrepFast
 " mappings to call them with the default word as search text
 nmap ,wR :RecurGrep <cword><CR>
 nmap ,wr :RecurGrepFast <cword><CR>
-
-" use 256 colors when possible
-if &term =~? 'mlterm\|xterm\|xterm-256\|screen-256'
-	let &t_Co = 256
-    colorscheme fisa
-else
-    colorscheme delek
-endif
-
-" colors for gvim
-if has('gui_running')
-    colorscheme wombat
-endif
 
 " when scrolling, keep cursor 3 lines away from screen border
 set scrolloff=3

@@ -104,13 +104,10 @@ Bundle 'YankRing.vim'
 
 
 " Alan ======================
-"---------------------------------------------------------------------------
-" ENCODING SETTINGS
-"---------------------------------------------------------------------------
-
-set encoding=utf-8
-set fileencodings=utf-8,chinese,latin-1
-set fileencoding=utf-8
+Bundle 'fatih/vim-go'
+Bundle 'Blackrush/vim-gocode'
+Bundle 'dgryski/vim-godef'
+Bundle 'bradfitz/goimports'
 
 "Bundle 'alfredodeza/pytest.vim'
 "map <leader>dt :set makeprg=python\ manage.py\ test\|:call MakeGreen()<CR>

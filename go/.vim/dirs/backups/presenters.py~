@@ -1,0 +1,104 @@
+import re
+import datetime
+from criteria.models import LocationManager
+
+__author__ = 'alan'
+
+
+class StaffPresenter():
+
+    object = None
+
+    def __init__(self, staff):
+        self.object = staff
+
+    def get_city_name(self, zipcode):
+        if zipcode is not 0:
+            location_manager = LocationManager()
+            return location_manager.get(area_id=zipcode)['results'].pop().get('name')
+
+        return ''
+
+    def get_area_name(self, zipcode):
+        if zipcode is not 0:
+            location_manager = LocationManager()
+            return location_manager.get(area_id=zipcode)['results'].pop().get('areas').pop().get('name')
+
+        return ''
+
+    def city_name(self):
+        return self.get_city_name(self.object.zipcode)
+
+    def area_name(self):
+        return self.get_area_name(self.object.zipcode)
+
+    def cityarea_name(self):
+        # location_manager = LocationManager()
+        # city = location_manager.get(area_id=self.zipcode)['results'].pop().get('name')
+        # area = location_manager.get(area_id=self.zipcode)['results'].pop().get('areas').pop().get('name')
+        return "%s%s" % (self.city_name(), self.area_name())
+
+    def full_address(self):
+        if self.object.city is not None and self.object.zipcode is not 0:
+            return "(%d) %s%s" % (self.object.zipcode, self.cityarea_name(), self.object.address)
+
+        return ''
+
+    def census_city_name(self):
+        return self.get_city_name(self.object.census_zipcode)
+
+    def census_area_name(self):
+        return self.get_area_name(self.object.census_zipcode)
+
+    def census_cityarea_name(self):
+        return "%s%s" % (self.census_city_name(), self.census_area_name())
+
+    def census_full_address(self):
+        if self.object.census_city is not None and self.object.census_zipcode is not 0:
+            return "(%d) %s%s" % (
+                    self.object.census_zipcode,
+                    self.census_cityarea_name(),
+                    self.object.census_address)
+
+        return ''
+
+    def gender(self):
+        return '先生' if self.object.gender == "male" else "小姐"
+
+    def tw_date_of_birth(self):
+        if self.object.date_of_birth is not None:
+            year = self.object.date_of_birth.strftime('%Y')
+            tw_year = int(year) - 1911
+            return '%s年' % (tw_year, ) + self.object.date_of_birth.strftime('%m月%d日')
+        else:
+            return ''
+
+    def updated_at(self):
+        if self.object.updated_at is not None:
+            return self.object.updated_at.strftime('%Y年%m月%d日 %I:%M:%S %p')
+        else:
+            return ''
+
+    def full_shortcut(self):
+        # FR 銓浚金屬 (28632695)
+        return "%s %s (%s)" % (self.object.shortcut, self.object.name)
+
+    def shortcut_identity(self):
+        return self.object.shortcut.identity
+
+    def full_title(self):
+        value = ''
+        for item in self.object.TYPE_IN_STAFF:
+            value = item[1] if item[0] == self.object.type else ''
+            if value != '':
+                break
+        return "%s %s" % (value, self.object.job_title)
+
+    def status(self):
+        value = ''
+        for item in self.object.STATUS_IN_STAFF:
+            value = item[1] if item[0] == self.object.status else ''
+            if value != '':
+                break
+        return value
+

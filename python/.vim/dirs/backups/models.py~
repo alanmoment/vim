@@ -1,0 +1,244 @@
+from django.db import models
+from car.models import Car
+from system.models import Shortcut, JobTitle
+from employee.presenters import StaffPresenter
+from django.core.exceptions import ObjectDoesNotExist
+# Create your models here.
+
+
+class StaffManager(models.Manager):
+
+    def create_staff(self, kwargs):
+        shortcut = None
+
+        try:
+            if int(kwargs.get('shortcut')):
+                shortcut = Shortcut.objects.get(pk=kwargs.get('shortcut'))
+        except ValueError:
+            pass
+        except Shortcut.DoesNotExist:
+            pass
+
+        staff = self.create(
+            name=kwargs.get('name'),
+            type=kwargs.get('type'),
+            gender=kwargs.get('gender'),
+            sid=kwargs.get('sid'),
+            date_of_birth=kwargs.get('date_of_birth'),
+            census_city=kwargs.get('census_city'),
+            census_zipcode=kwargs.get('census_zipcode'),
+            census_address=kwargs.get('census_address'),
+            city=kwargs.get('city'),
+            zipcode=kwargs.get('zipcode'),
+            address=kwargs.get('address'),
+            tel=kwargs.get('tel'),
+            cell_phone=kwargs.get('cell_phone'),
+            remark=kwargs.get('remark'),
+            status=kwargs.get('status'),
+            job_title=kwargs.get('job_title'),
+            shortcut=shortcut
+        )
+        staff.save()
+        return staff
+
+
+class Staff(models.Model):
+    name = models.CharField('員工姓名', max_length=255)
+    GENERAL = 'general'
+    DRIVER = 'driver'
+    CONTRACTUAL = 'contractual'
+    OUTSIDE = 'outside'
+    TYPE_IN_STAFF = (
+        (GENERAL, '職員'),
+        (DRIVER, '本行司機'),
+        (CONTRACTUAL, '靠行司機'),
+        (OUTSIDE, '調度司機')
+    )
+    type = models.CharField('員工屬性', max_length=255, choices=TYPE_IN_STAFF)
+    job_title = models.ForeignKey(JobTitle, null=True, blank=True)
+    gender = models.CharField('性別', max_length=255, null=True, blank=True)
+    sid = models.CharField('身份證字號', max_length=255)
+    date_of_birth = models.DateField('出生年月日')
+    census_city = models.IntegerField('戶籍地縣市')
+    census_zipcode = models.IntegerField('戶籍地郵遞區號')
+    census_address = models.CharField('戶籍地址', max_length=255)
+    city = models.IntegerField('縣市')
+    zipcode = models.IntegerField('郵遞區號')
+    address = models.CharField('地址', max_length=255)
+    tel = models.CharField('電話', max_length=255)
+    cell_phone = models.CharField('手機', max_length=255)
+    remark = models.TextField('備註', null=True, blank=True)
+    SERVICE = 1
+    INTERDICTED = 2
+    TURNOVER = 3
+    STATUS_IN_STAFF = (
+        (SERVICE, '在職'),
+        (INTERDICTED, '停職'),
+        (TURNOVER, '離職')
+    )
+    status = models.IntegerField('員工狀態',
+                                 default=SERVICE,
+                                 choices=STATUS_IN_STAFF)
+    shortcut = models.ForeignKey(Shortcut, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    objects = StaffManager()
+
+    def __str__(self):
+        return "[%d] %s" % (self.id, self.name)
+
+    def __unicode__(self):
+        return self.name
+
+    def format(self):
+        return StaffPresenter(self)
+
+    def full_title(self):
+        return self.format().full_title()
+
+    def format_updated_at(self):
+        return self.format().updated_at()
+
+
+class ContractManager(models.Manager):
+
+    def edit_contract(self, kwargs):
+        contract = None
+        staff = None
+        try:
+            if int(kwargs.get('staff')):
+                staff = Staff.objects.get(pk=kwargs.get('staff'))
+
+            contract = Contract.objects.get(staff=staff.id)
+            contract.forwarder = kwargs.get('forwarder')
+            contract.guarantee = kwargs.get('guarantee')
+            contract.save()
+        except Staff.DoesNotExist:
+            raise "Staff is not exist"
+        except Contract.DoesNotExist:
+            contract = self.create(
+                forwarder=kwargs.get('forwarder'),
+                guarantee=kwargs.get('guarantee'),
+                staff=staff
+            )
+            contract.save()
+        return contract
+
+
+# 員工合約書
+class Contract(models.Model):
+    staff = models.ForeignKey(Staff)
+    forwarder = models.BooleanField('承攬合約書', blank=True, default=False)
+    guarantee = models.BooleanField('職員切結書', blank=True, default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    objects = ContractManager()
+
+    def __str__(self):
+        return "[%d] %s" % (self.id, self.staff.name)
+
+    def __unicode__(self):
+        return self.staff.name
+
+
+
+# 車輛登記
+class VehicleRegister(models.Model):
+    staff = models.ForeignKey(Staff)
+    car = models.ForeignKey(Car)
+    VALID = 1
+    INVALID = 2
+    STATUS_IN_VEHICLE_REGISTER = (
+        (VALID, '有效'),
+        (INVALID, '無效')
+    )
+    status = models.IntegerField('車輛登記狀態',
+                                 default=VALID,
+                                 choices=STATUS_IN_VEHICLE_REGISTER)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+# 駕照
+class Driver(models.Model):
+    cycle = 3
+    PERSONAL_SMALL = 1
+    PERSONAL_BIG = 2
+    BUSINESS_SMALL = 3
+    BUSINESS_BIG = 4
+    DRIVER_TYPE = (
+        (PERSONAL_SMALL, '自用小貨車'),
+        (PERSONAL_BIG, '自用大貨車'),
+        (BUSINESS_SMALL, '營業小貨車'),
+        (BUSINESS_BIG, '營業大貨車')
+    )
+    type = models.IntegerField('駕照類型',
+                               choices=DRIVER_TYPE,
+                               null=True,
+                               blank=True)
+    number = models.CharField('駕照號碼', max_length=255, null=True, blank=True)
+    date_of_effective = models.DateField('生效日期', null=True, blank=True)
+    date_of_invalid = models.DateField('失效日期', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+# 載運危險物品證照
+class Dangerous(models.Model):
+    cycle = 3
+    LEVEL_1 = 1
+    LEVEL_2 = 2
+    LEVEL_3 = 3
+    LEVEL_TYPE = (
+        (LEVEL_1, '甲級'),
+        (LEVEL_2, '乙級'),
+        (LEVEL_3, '丙級'),
+    )
+    type = models.IntegerField('證照類型',
+                               null=True,
+                               blank=True,
+                               choices=LEVEL_TYPE)
+    number = models.CharField('證照號碼', max_length=255, null=True, blank=True)
+    date_of_effective = models.DateField('生效日期', null=True, blank=True)
+    date_of_invalid = models.DateField('失效日期', null=True, blank=True)
+    class_cycle = models.CharField('上課週期',
+                                   max_length=255,
+                                   null=True,
+                                   blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+# 堆高機證照
+class Stacker(models.Model):
+    cycle = 3
+    LEVEL_1 = 1
+    LEVEL_2 = 2
+    LEVEL_3 = 3
+    LEVEL_TYPE = (
+        (LEVEL_1, '甲級'),
+        (LEVEL_2, '乙級'),
+        (LEVEL_3, '丙級'),
+    )
+    type = models.IntegerField('證照類型',
+                               null=True,
+                               blank=True,
+                               choices=LEVEL_TYPE)
+    number = models.CharField('證照號碼', max_length=255, null=True, blank=True)
+    date_of_effective = models.DateField('生效日期', null=True, blank=True)
+    date_of_invalid = models.DateField('失效日期', null=True, blank=True)
+    class_cycle = models.CharField('上課週期',
+                                   max_length=255,
+                                   null=True,
+                                   blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class License(models.Model):
+    staff = models.ForeignKey(Staff)
+    driver = models.ForeignKey(Driver)
+    dangerous = models.ForeignKey(Dangerous)
+    stacker = models.ForeignKey(Stacker)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

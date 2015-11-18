@@ -1,0 +1,110 @@
+"""
+Django settings for sy_freight project.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/1.7/topics/settings/
+
+For the full list of settings and their values, see
+https://docs.djangoproject.com/en/1.7/ref/settings/
+"""
+
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = '%zwq(5rw4)qbl$lth8e$^6lg@wxt$$99e!9o@*p&s9wtm*4h79'
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+TEMPLATE_DEBUG = True
+
+ALLOWED_HOSTS = []
+
+
+# Application definition
+
+INSTALLED_APPS = (
+    'rest_framework',
+    #'django-nose',
+    'system',
+    'location',
+    'customer',
+    'fee',
+    'criteria',
+    'employee',
+    'car',
+)
+
+# REST framework
+
+REST_FRAMEWORK = {
+    'DEFAULT_MODEL_SERIALIZER_CLASS': (
+        'rest_framework.serializers.HyperlinkedModelSerializer',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',
+        # 'rest_framework.permissions.IsAdminUser',
+        # 'rest_framework.renderers.JSONRenderer',
+        # 'rest_framework.renderers.BrowsableAPIRenderer',
+        # 'rest_framework.filters.DjangoFilterBackend',
+    ),
+    'PAGE_SIZE': 50,
+    'PAGINATE_BY': 50,
+}
+
+MIDDLEWARE_CLASSES = (
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+)
+
+
+FIXTURE_DIRS = (
+    'system.fixtures',
+    'fee.fixtures',
+    'employee.fixtures'
+)
+
+ROOT_URLCONF = 'sy_freight.urls'
+
+# Database
+# https://docs.djangoproject.com/en/1.7/ref/settings/#databases
+
+DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': os.path.join(BASE_DIR, 'db.test.sqlite3'),
+    # }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'test_sy_freight',
+        'USER': os.environ['SY_DB_USER'],
+        'PASSWORD': os.environ['SY_DB_PASSWORD'],
+        'HOST': os.environ['SY_DB_HOST'],
+        'PORT': '5432',
+    }
+}
+
+# Internationalization
+# https://docs.djangoproject.com/en/1.7/topics/i18n/
+
+LANGUAGE_CODE = 'zh-TW'
+TIME_ZONE = 'Asia/Taipei'
+USE_I18N = True
+USE_L10N = True
+USE_TZ = False
+
+TEMPLATE_DIRS = (
+    os.path.join(PROJECT_ROOT, 'static/build/html'),
+)

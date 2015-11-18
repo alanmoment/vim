@@ -1,0 +1,68 @@
+from django import forms
+from employee.models import Staff
+from system.models import Shortcut
+
+
+class StaffForm(forms.Form):
+    name = forms.CharField(max_length=90)
+    type = forms.CharField(max_length=30)
+    sid = forms.CharField(max_length=10)
+    job_title = forms.CharField(max_length=60, required=False)
+    gender = forms.CharField(max_length=10, required=False)
+    date_of_birth = forms.DateField(input_formats=['%Y-%m-%d'])
+    census_city = forms.IntegerField()
+    census_zipcode = forms.IntegerField()
+    census_address = forms.CharField(max_length=100)
+    city = forms.IntegerField()
+    zipcode = forms.IntegerField()
+    address = forms.CharField(max_length=100)
+    remark = forms.CharField(max_length=1000, widget=forms.Textarea(), required=False)
+    shortcut = forms.CharField(max_length=10)
+    created_at = forms.DateTimeField(required=False)
+    updated_at = forms.DateTimeField(required=False)
+
+    def clean(self):
+        cleaned_data = self.cleaned_data # individual field's clean methods have already been called
+        staff_type = cleaned_data.get("type")
+        job_title = cleaned_data.get("job_title")
+        if staff_type == 'general' and (job_title is '' or job_title == '0'):
+            raise forms.ValidationError("Passwords must be identical.")
+
+        return cleaned_data
+
+    #def clean_type(self):
+        #if self.cleaned_data['type'] == 'general' and self.job_title == '':
+        #    raise forms.ValidationError("You must choices Job Title")
+        #else:
+        #    return self.cleaned_data['type']
+
+    def clean_sid(self):
+        existing = Staff.objects.filter(sid__exact=self.cleaned_data['sid'])
+        if existing.exists():
+            raise forms.ValidationError("Security ID is exist.")
+        else:
+            return self.cleaned_data['sid']
+
+    def clean_shortcut(self):
+        existing = Shortcut.objects.filter(identity__exact=self.cleaned_data['shortcut'])
+        if existing.exists():
+            raise forms.ValidationError("Shortcut is exist.")
+        else:
+            return self.cleaned_data['shortcut']
+
+
+class ContractForm(forms.Form):
+    forwarder = forms.BooleanField(required=False)
+    guarantee = forms.BooleanField(required=False)
+    staff = forms.IntegerField()
+    created_at = forms.DateTimeField(required=False)
+    updated_at = forms.DateTimeField(required=False)
+
+    def clean_staff(self):
+        print(self.cleaned_data['staff'])
+        existing = Staff.objects.filter(pk=self.cleaned_data['staff'])
+        if existing.exists():
+            raise forms.ValidationError("Staff is not exist.")
+        else:
+            return self.cleaned_data['staff']
+

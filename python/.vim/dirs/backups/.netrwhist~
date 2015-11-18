@@ -1,0 +1,6 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhist_cnt =4
+let g:netrw_dirhist_1='/Users/alan/Documents/SourceTree/sy-freight'
+let g:netrw_dirhist_2='/Users/alan/Workspace/SourceTree/sy-freight'
+let g:netrw_dirhist_3='/Users/alan/Workspace/Go/main'
+let g:netrw_dirhist_4='/Users/alan/Workspace/SourceTree/sy-freight'

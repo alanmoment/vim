@@ -1,0 +1,157 @@
+from django.test import TestCase
+from django.test import client
+from urllib.parse import unquote
+from django.http import QueryDict
+from django.utils import unittest
+from employee.forms import StaffForm, ContractForm
+from employee.models import Staff, Contract
+from system.models import Shortcut, JobTitle
+
+
+# Create your tests here.
+
+
+class StaffFormTestCase(TestCase):
+
+    fixtures = ['staff.json', 'jobTitle.json']
+
+    def setUp(self):
+        self.data = {
+            "name": "陳正倫",
+            "type": "general",
+            "gender": "male",
+            "sid": "F126072137",
+            "census_city": 3,
+            "census_zipcode": 222,
+            "census_address": "民享路152號",
+            "date_of_birth": "1985-07-07",
+            "city": 3,
+            "zipcode": 222,
+            "address": "民享路152號",
+            "tel": "02-26016607",
+            "cell_phone": "0938057788",
+            "remark": "我是天才",
+            "status": "1",
+            "shortcut": "AD",
+            "job_title": 10
+        }
+        self.c = client.Client()
+
+    # @unittest.skip("skip the test")
+    def test_type_is_general(self):
+        self.data.update({'type': 'general'})
+        self.data.update({'job_title': 0})
+        request = QueryDict('', mutable=True)
+        request.update(self.data)
+        request.method = 'POST'
+
+        post = request
+        post._mutable = True
+        if request.method == 'POST':
+            if post.get('job_title'):
+                post['job_title'] = JobTitle.objects.get(pk=post.get('job_title'))
+
+            form = StaffForm(post)
+            self.assertEqual(form.is_valid(), False)
+
+    # @unittest.skip("skip the test")
+    def test_nomal_staff_form_validation(self):
+        request = QueryDict('', mutable=True)
+        request.update(self.data)
+        request.method = 'POST'
+
+        post = request
+        post._mutable = True
+        if request.method == 'POST':
+            if post.get('job_title'):
+                post['job_title'] = JobTitle.objects.get(pk=post.get('job_title'))
+
+            form = StaffForm(post)
+            self.assertTrue(form.is_valid())
+            if form.is_valid():
+                staff = Staff.objects.create_staff(post)
+                if str(post.get('shortcut')) != '':
+                    shortcut = Shortcut(
+                        identity=post.get('shortcut'),
+                        type='staff',
+                        reference={
+                            'id': staff.id,
+                            'name': staff.name,
+                            'address': staff.format().full_address()
+                        }
+                    )
+                    shortcut.save()
+                    staff.shortcut = shortcut
+                    staff.save()
+                    self.assertEqual("AD", staff.shortcut.identity)
+
+    def test_create_staff(self):
+        import json
+        response = self.c.post('/api/staffs/', self.data)
+        data = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(data.get('error'), None)
+
+
+class ContractTestCase(TestCase):
+    fixtures = ['staff.json', 'jobTitle.json', 'contract.json']
+
+    def setUp(self):
+        self.staff = Staff.objects.get(pk=1)
+        self.data = {
+            "staff": self.staff.id,
+            "forwarder": True,
+            "guarantee": False
+        }
+        self.c = client.Client()
+
+    def test_create_staff_contract_form_validation(self):
+        self.data.update({'staff': 2})
+        request = QueryDict('', mutable=True)
+        request.update(self.data)
+        request.method = 'POST'
+        post = request
+        post._mutable = True
+        if request.method == 'POST':
+            form = ContractForm(post)
+            self.assertTrue(form.is_valid())
+            if form.is_valid():
+                contract = Contract.objects.edit_contract(post)
+                self.assertEqual(2, contract.id)
+
+    def test_edit_staff_contract_form_validation(self):
+        request = QueryDict('', mutable=True)
+        request.update(self.data)
+        request.method = 'POST'
+        post = request
+        post._mutable = True
+        if request.method == 'POST':
+            form = ContractForm(post)
+            self.assertTrue(form.is_valid())
+            if form.is_valid():
+                contract = Contract.objects.edit_contract(post)
+                self.assertEqual(self.staff.id, contract.id)
+
+    # @unittest.skip("skip the test")
+    def test_staff_not_exist_form_validation(self):
+        self.data.update({'staff': 200})
+        request = QueryDict('', mutable=True)
+        request.update(self.data)
+        request.method = 'POST'
+        post = request
+        post._mutable = True
+        if request.method == 'POST':
+            form = ContractForm(post)
+            self.assertEqual(False, form.is_valid())
+            self.assertEqual(1, len(form.errors))
+
+    def test_create_staff_contract_visiting(self):
+        import json
+        response = self.c.post('/api/contracts/', self.data)
+        data = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(data.get('error'), None)
+
+    def test_get_staff_contract(self):
+        response = self.c.get('/api/contract/1')
+        print(response.content)
